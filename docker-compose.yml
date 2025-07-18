@@ -1,0 +1,58 @@
+services:
+  auth:
+    build:
+      context: ./auth
+    container_name: auth
+    env_file:
+      - .env
+    ports:
+      - 8001:8001
+    volumes:
+      - dataprotection:/root/.aspnet/DataProtection-Keys
+    networks:
+      - dev
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    volumes:
+      - dataprotection:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      - auth
+      - db
+    networks:
+      - dev
+
+  db:
+    container_name: db
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: myDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    networks:
+      - dev
+
+networks:
+  dev:
+
+volumes:
+  dataprotection:
+  postgres_data:
+    driver: local
