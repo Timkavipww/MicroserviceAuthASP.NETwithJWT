@@ -1,5 +1,6 @@
 using auth.Data;
 using auth.Extensions;
+using auth.Migrations;
 using auth.Models;
 using auth.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -48,7 +49,7 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginModel loginModel, CancellationToken cts)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username== loginModel.username, cts);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginModel.username, cts);
 
         if (user is null)
             throw new Exception($"user not found with username {loginModel.username}");
@@ -62,10 +63,22 @@ public class AuthController : ControllerBase
         }
 
         _logger.LogInformation($"user with username {user.Username} logged in");
-        
+
         var token = await _jwtService.GenerateTokenAsync(user, cts);
         HttpContext.Response
             .SetAuthCooke(token);
+
+        var refreshToken = new RefreshToken
+        {
+            Token = Guid.NewGuid().ToString(),
+            UserId = user.Id.ToString(),
+            ExpiresAt = DateTime.UtcNow.AddDays(7),
+            IsRevoked = false
+        };
+        _context.RefreshTokens.Add(refreshToken);
+        await _context.SaveChangesAsync();
+
+
         var response = new
         {
             user.Username,
@@ -117,8 +130,37 @@ public class AuthController : ControllerBase
         };
         HttpContext.Response
             .SetAuthCooke(token);
-        
+
         return Ok(response);
+    }
+    [HttpPost("refresh")]
+    public async Task<ActionResult<RefreshRequest>> Refresh([FromBody] RefreshRequest request, CancellationToken cts)
+    {
+        var token = await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == request.RefreshToken && !rt.IsRevoked);
+
+        if (token == null || token.ExpiresAt < DateTime.UtcNow)
+            return Unauthorized("Invalid or expired refresh token");
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id.ToString() == token.UserId, cts);
+
+        var newAccessToken = await _jwtService.GenerateTokenAsync(user!, cts);
+        var newRefreshToken = new RefreshToken
+        {
+            Token = Guid.NewGuid().ToString(),
+            UserId = user!.Id.ToString(),
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        };
+
+        token.IsRevoked = true;
+        _context.RefreshTokens.Add(newRefreshToken);
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            access_token = newAccessToken,
+            refresh_token = newRefreshToken.Token
+        });
     }
 
 }   
