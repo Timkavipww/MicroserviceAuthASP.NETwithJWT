@@ -25,44 +25,39 @@ backendApi.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config
-    // 1) убеждаемся, что это 401 и мы ещё не ре-трайили
+    // IF STATUSCODE == 401 REFRESH TOKEN
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
 
-      // 2) вытаскиваем refresh token
       const refreshToken = localStorage.getItem('refreshToken')
       if (!refreshToken) {
-        // нет куда рефрешить — сразу логаут
+        //LOGOUT IF NO REFRESH TOKEN
         localStorage.clear()
         window.location.href = '/login'
         return Promise.reject(error)
       }
 
       try {
-        // 3) шлём на /auth/refresh DTO { refreshToken: string }
         const { data } = await authApi.post('/auth/refresh', { refreshToken })
 
         const { access_token, refresh_token } = data
 
-        // 4) сохраняем оба токена
+        // REFRESH LOCALSTORAGE
         localStorage.setItem('jwtToken', access_token)
         localStorage.setItem('refreshToken', refresh_token)
 
-        // 5) на всякий случай обновляем defaults
+        // UPDATE HEADERS
         backendApi.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
 
-        // 6) и обновляем сам запрос
         originalRequest.headers['Authorization'] = `Bearer ${access_token}`
         return backendApi(originalRequest)
       } catch (refreshError) {
-        // и если рефреш не прошёл — чистим и кидаем на логин
         localStorage.clear()
-        window.location.href = '/login'
+        // window.location.href = '/login'    FUTURED
         return Promise.reject(refreshError)
       }
     }
 
-    // все остальные ошибки
     return Promise.reject(error)
   }
 )
