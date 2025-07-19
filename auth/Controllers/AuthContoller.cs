@@ -82,7 +82,8 @@ public class AuthController : ControllerBase
         var response = new
         {
             user.Username,
-            token
+            access_token = token,
+            refresh_token = refreshToken.Token
         };
 
         return Ok(response);

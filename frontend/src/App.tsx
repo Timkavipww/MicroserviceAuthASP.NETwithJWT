@@ -1,6 +1,6 @@
-import axios from 'axios'
 import { useEffect, useState } from 'react'
 import './App.css'
+import { authApi, backendApi } from './api/axiosInstance'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('jwtToken') || null)
@@ -15,15 +15,19 @@ function App() {
 
   const Login = async () => {
     try {
-      const res = await axios.post('http://localhost:8001/auth/login', {
+      const res = await authApi.post('/auth/login', {
         username: 'username',
         password: '1234',
-    })
+      })
 
-      const jwt = res.data.token
+      const jwt = res.data.access_token
+      const refresh = res.data.refresh_token
+
       setToken(jwt)
       localStorage.setItem('jwtToken', jwt)
-      setResponse('Успешный вход. Токен сохранён.')
+      localStorage.setItem('refreshToken', refresh)
+
+      setResponse('Успешный вход. Токены сохранены.')
     } catch (err) {
       console.error(err)
       setResponse('Ошибка при входе.')
@@ -31,17 +35,8 @@ function App() {
   }
 
   const GetWithAuth = async () => {
-    if (!token) {
-      setResponse('Токен не найден. Выполните вход.')
-      return
-    }
-
     try {
-      const res = await axios.get('http://localhost:8000/auth/with', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }, withCredentials : true 
-      })
+      const res = await backendApi.get('/auth/with')
       setResponse(`Ответ (с авторизацией): ${JSON.stringify(res.data)}`)
     } catch (err) {
       console.error(err)
@@ -51,7 +46,7 @@ function App() {
 
   const GetWithoutAuth = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/auth/without')
+      const res = await backendApi.get('/auth/without')
       setResponse(`Ответ (без авторизации): ${JSON.stringify(res.data)}`)
     } catch (err) {
       console.error(err)
@@ -61,6 +56,7 @@ function App() {
 
   const Logout = () => {
     localStorage.removeItem('jwtToken')
+    localStorage.removeItem('refreshToken')
     setToken(null)
     setResponse('Вы вышли из системы.')
   }
@@ -69,8 +65,8 @@ function App() {
     <>
       <div>
         <button onClick={Login}>Войти</button>
-        <button onClick={GetWithoutAuth}>Получить без авторизации</button>
-        <button onClick={GetWithAuth}>Получить с авторизацией</button>
+        <button onClick={GetWithoutAuth}>Без авторизации</button>
+        <button onClick={GetWithAuth}>С авторизацией</button>
         <button onClick={Logout} disabled={!token}>Выйти</button>
         <p>{response}</p>
       </div>

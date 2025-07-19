@@ -75,9 +75,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy(MyAllowSpecificOrigins, policy =>
     {
         policy.WithOrigins("http://localhost:3000", "http://frontend:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
 
@@ -92,7 +92,8 @@ using (var scope = app.Services.CreateScope())
     await db.Database.MigrateAsync();
 }
 
-app.UseCors(MyAllowSpecificOrigins);        
+app.UseCors(MyAllowSpecificOrigins);
+
 app.UseRouting();
 
 app.UseAuthentication();

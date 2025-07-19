@@ -72,16 +72,15 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-builder.Services.AddAuthentication();
-
 var app = builder.Build();
 
+app.UseCors(MyAllowSpecificOrigins);
+
 app.UseRouting();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseCors(MyAllowSpecificOrigins);
 app.UseHttpsRedirection();
 
 app.UseSwagger();
