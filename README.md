@@ -39,7 +39,7 @@
 ## 2. Требования
 
 * Docker и Docker Compose
-* .NET 7 SDK (для локальной сборки)
+* .NET 8.0 SDK (для локальной сборки)
 * Node.js и npm (для фронтенда)
 
 ## 3. Запуск проекта
@@ -47,8 +47,8 @@
 1. Клонировать репозиторий:
 
    ```bash
-   git clone https://github.com/your-repo.git
-   cd your-repo
+   git clone https://github.com/Timkavipww/MicroserviceAuthASP.NETwithJWT
+   cd MicroserviceAuthASP.NETwithJWT
    ```
 
 2. Запустить в фоне все сервисы:
