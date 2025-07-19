@@ -46,14 +46,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(string username, string password, CancellationToken cts)
+    public async Task<IActionResult> Login([FromBody] LoginModel loginModel, CancellationToken cts)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username== username, cts);
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username== loginModel.username, cts);
 
         if (user is null)
-            throw new Exception($"user not found with username {username}");
+            throw new Exception($"user not found with username {loginModel.username}");
 
-        var checkPasswordResult = BCrypt.Net.BCrypt.EnhancedVerify(password, user.HashPassword);
+        var checkPasswordResult = BCrypt.Net.BCrypt.EnhancedVerify(loginModel.password, user.HashPassword);
 
         if (!checkPasswordResult)
         {
@@ -68,7 +68,7 @@ public class AuthController : ControllerBase
             .SetAuthCooke(token);
         var response = new
         {
-            username,
+            user.Username,
             token
         };
 

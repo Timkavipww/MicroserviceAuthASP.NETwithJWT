@@ -27,6 +27,19 @@ services:
       - db
     networks:
       - dev
+  
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+      - auth
+    networks:
+      - dev
+    
 
   db:
     container_name: db
@@ -35,7 +48,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: myDB
+      POSTGRES_DB: olddarkkidDB
     ports:
       - "5432:5432"
     volumes:
